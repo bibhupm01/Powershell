@@ -1,0 +1,79 @@
+Enter-PSSession -ComputerName 'hv.local' -Credential (Get-Credential -UserName "Administrator" -Message "Type password") -Verbose -ErrorAction Stop -Authentication Credssp
+
+function create-vm {
+    param (
+        [string]$vm_name
+    )
+    $server_type = Read-Host "Put server service type"
+    $server_ip = Read-host "Put indicated IP Address"
+    $server_os = Read-Host "Specify Server OS - WIN or LIN"
+    $server_windows = "WIN"
+    $server_linux = "LIN"
+#-----------------------------------------------------------------------------------
+    if ($server_os -eq $server_windows) {
+        $vm_name = "MAOX-$Server_windows-$server_type-$server_ip"
+        New-VHD -Path "C:\Virtual Machines\Windows\$($vm_name)\$($vm_name).vhdx" `
+            -Fixed `
+            -SizeBytes 40GB `
+            -ErrorAction Stop `
+            -Verbose `
+            -Confirm:$false
+    }
+    elseif ($server_os -eq $server_linux) {
+        $vm_name = "MAOX-$Server_linux-$server_type-$server_ip"
+        New-VHD -Path "C:\Virtual Machines\Linux\$($vm_name)\$($vm_name).vhdx" `
+            -Fixed `
+            -SizeBytes 40GB `
+            -ErrorAction Stop `
+            -Verbose `
+            -Confirm:$false
+    }    
+    else {
+        Write-Host "It is mandotory to define OS WIN or LIN"
+    }
+#-----------------------------------------------------------------------------------
+    if ($server_os -eq $server_windows) {
+        $vm_name = "MAOX-$Server_windows-$server_type-$server_ip"
+        New-VM -Name $vm_name `
+            -MemoryStartupBytes 2GB `
+            -VHDPath "C:\Virtual Machines\Windows\$($vm_name)\$($vm_name).vhdx" `
+            -SwitchName 'InternalSwitch1' `
+            -Path "C:\Virtual Machines\Windows\$($vm_name)" `
+            -Generation 1 `
+            -Confirm:$false `
+            -BootDevice CD `
+            -Verbose
+    }
+    elseif ($server_os -eq $server_linux) {
+        $vm_name = "MAOX-$Server_linux-$server_type-$server_ip"
+        New-VM -Name $vm_name `
+            -MemoryStartupBytes 2GB `
+            -VHDPath "C:\Virtual Machines\Linux\$($vm_name)\$($vm_name).vhdx" `
+            -SwitchName 'InternalSwitch1' `
+            -Path "C:\Virtual Machines\Linux\$($vm_name)" `
+            -Generation 1 `
+            -Confirm:$false `
+            -BootDevice CD `
+            -Verbose
+    }
+    else {
+        Write-Host-Host "It is mandotory to define OS WIN or LIN"
+    }
+#-----------------------------------------------------------------------------------    
+    Add-VMDvdDrive -VMName $vm_name -Path "C:\ISO\Windows Server 2022.iso" -Confirm:$false -Verbose
+
+    return Start-VM $vm_name
+}
+
+$yes = "yes"
+$no  = "no"
+$vm_power = Read-Host "Type yes or no"
+if ($vm_power -eq $yes) {
+    create-vm
+}
+elseif ($vm_power -eq $no) {
+    Write-Host "Cant create VMs"
+}
+else {
+    Write-Host "You put no condtions, MF ! :)"
+}
